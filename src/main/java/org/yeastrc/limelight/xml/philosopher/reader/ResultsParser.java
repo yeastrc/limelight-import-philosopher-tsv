@@ -18,7 +18,10 @@
 
 package org.yeastrc.limelight.xml.philosopher.reader;
 
+import com.sun.xml.bind.v2.runtime.reflect.opt.Const;
+import org.yeastrc.limelight.xml.philosopher.constants.Constants;
 import org.yeastrc.limelight.xml.philosopher.objects.*;
+import org.yeastrc.limelight.xml.philosopher.utils.PhilosopherParsingUtils;
 import org.yeastrc.limelight.xml.philosopher.utils.ReportedPeptideUtils;
 
 import java.io.BufferedReader;
@@ -39,8 +42,7 @@ import java.util.regex.Pattern;
  */
 public class ResultsParser {
 
-	public static PhilosopherResults getResults(File psmTSVFile, SearchParameters params, boolean isOpenMod ) throws Throwable {
-
+	public static PhilosopherResults getResults(File psmTSVFile, SearchParameters params, boolean isOpenMod, String searchProgram ) throws Throwable {
 
 		PhilosopherResults results = new PhilosopherResults();
 		Map<PhilosopherReportedPeptide,Map<Integer,PhilosopherPSM>> resultMap = new HashMap<>();
@@ -48,11 +50,11 @@ public class ResultsParser {
 
 		try(BufferedReader br = new BufferedReader(new FileReader( psmTSVFile ))) {
 
-			br.readLine();	// skip header
+			String headerLine = br.readLine();
+			Map<String, Integer> columnMap = processHeaderLine(headerLine);
 
 			for(String line = br.readLine(); line != null; line = br.readLine()) {
-				MSFraggerPSM psm = getPSMFromLine(line, params, isOpenMod);
-
+				PhilosopherPSM psm = getPSMFromLine(line, columnMap, params, isOpenMod, searchProgram);
 				PhilosopherReportedPeptide reportedPeptide = ReportedPeptideUtils.getReportedPeptideForPSM( psm );
 
 				if( !results.getPeptidePSMMap().containsKey( reportedPeptide ) )
@@ -66,6 +68,23 @@ public class ResultsParser {
 	}
 
 	/**
+	 * Get a map of column headers to the index of that column on the line
+	 *
+	 * @param headerLine
+	 * @return
+	 */
+	private static Map<String, Integer> processHeaderLine(String headerLine) {
+		Map<String, Integer> columnMap = new HashMap<>();
+
+		String[] fields = headerLine.split("\\t", -1);
+		for(int i = 0; i < fields.length; i++) {
+			columnMap.put(fields[i], i);
+		}
+
+		return columnMap;
+	}
+
+	/**
 	 * Get a PSM object for a given line in MSFragger TSV output
 	 *
 	 * @param line
@@ -74,82 +93,77 @@ public class ResultsParser {
 	 * @return
 	 * @throws Exception
 	 */
-	private static MSFraggerPSM getPSMFromLine(String line, SearchParameters params, boolean isOpenMod) throws Exception {
+	private static PhilosopherPSM getPSMFromLine(String line, Map<String, Integer> columnMap, SearchParameters params, boolean isOpenMod, String searchProgram) throws Exception {
 
 		String decoyPrefix = params.getDecoyPrefix();
 
 		String[] fields = line.split("\\t", -1);
 
-		int scanNumber = Integer.parseInt(fields[0]);
-		BigDecimal precursorNeutralMass = new BigDecimal(fields[1]);
-		BigDecimal retentionTime = BigDecimal.valueOf(Double.parseDouble(fields[2] ) * 60);	// rt is reported as minutes, we want seconds
-		int charge = Integer.parseInt(fields[3]);
-		int rank = Integer.parseInt(fields[4]);
-		String sequence = fields[5];
-		int matchedFragmentIons = Integer.parseInt(fields[9]);
-		int totalFragmentIons = Integer.parseInt(fields[10]);
-		BigDecimal massDiff = new BigDecimal(fields[12]);
-		String modString = fields[15];
-		BigDecimal hyperscore = new BigDecimal(fields[16]);
-		BigDecimal nextHyperscore = new BigDecimal(fields[17]);
-		BigDecimal expectScore = new BigDecimal(fields[18]);
-		String localizedOpenMod = fields[19];
+		final int scanNumber = PhilosopherParsingUtils.getScanNumberFromSpectrumId(fields[columnMap.get("Spectrum")]);
+		final int charge = Integer.parseInt(fields[columnMap.get("Charge")]);
+		final String sequence = fields[columnMap.get("Peptide")];
+		final BigDecimal retentionTime = new BigDecimal(fields[columnMap.get("Retention")]);
+		final BigDecimal observedMz = new BigDecimal(fields[columnMap.get("Observed M/Z")]);
+		final BigDecimal deltaMass = new BigDecimal(fields[columnMap.get("Delta Mass")]);
+		final BigDecimal peptideProphetProbability = new BigDecimal(fields[columnMap.get("PeptideProphet Probability")]);
+		final String assignedModifications = fields[columnMap.get("Assigned Modifications")];
+		final String protein = fields[columnMap.get("Protein")];
+		final String mappedProteins = fields[columnMap.get("Mapped Proteins")];
 
-		BigDecimal hyperscoreNoDeltaMass = null;
-		BigDecimal hyperscoreWithDeltaMass = null;
-		BigDecimal nextHyperscoreWithDeltaMass = null;
-
-		if( fields[20].length() > 0 )
-			hyperscoreNoDeltaMass = new BigDecimal(fields[20]);
-		else
-			hyperscoreNoDeltaMass = BigDecimal.ZERO;
-
-
-		if( fields[21].length() > 0)
-			hyperscoreWithDeltaMass = new BigDecimal(fields[21]);
-		else
-			hyperscoreWithDeltaMass = BigDecimal.ZERO;
-
-		if( fields[22].length() > 0 )
-			nextHyperscoreWithDeltaMass = new BigDecimal(fields[22]);
-		else
-			nextHyperscoreWithDeltaMass = BigDecimal.ZERO;
-
-		String proteinMatch = fields[8];
-		String altProteinMatches = null;
-		if(fields.length == 25) {
-			altProteinMatches = fields[24];
+		PhilosopherPSM psm = null;
+		if(searchProgram.equals(Constants.PROGRAM_NAME_COMET)) {
+			psm = new CometPSM();
+		} else if(searchProgram.equals(Constants.PROGRAM_NAME_MSFRAGGER)) {
+			psm = new MSFraggerPSM();
+		} else {
+			throw new Exception("Unknown search program: " + searchProgram);
 		}
 
-		MSFraggerPSM psm = new MSFraggerPSM();
-
-		// populate the fields that require no extra processing
 		psm.setScanNumber(scanNumber);
-		psm.setPrecursorNeutralMass(precursorNeutralMass);
-		psm.setRetentionTime(retentionTime);
 		psm.setCharge(charge);
-		psm.setHitRank(rank);
+		psm.setMassDiff(deltaMass);
 		psm.setPeptideSequence(sequence);
-		psm.setMatchedFragmentIons(matchedFragmentIons);
-		psm.setTotalFragmentIons(totalFragmentIons);
-		psm.setMassDiff(massDiff);
-		psm.setHyperScore(hyperscore);
-		psm.setNextScore(nextHyperscore);
-		psm.seteValue(expectScore);
-		psm.setHyperScoreNoDeltaMass(hyperscoreNoDeltaMass);
-		psm.setHyperScoreWithDeltaMass(hyperscoreWithDeltaMass);
-		psm.setNextHyperScoreWithDeltaMass(nextHyperscoreWithDeltaMass);
+		psm.setPrecursorMZ(observedMz);
+		psm.setRetentionTime(retentionTime);
+		psm.setPeptideProphetProbability(peptideProphetProbability);
 
-		// add in dynamic mods
+		if(isOpenMod) {
+			psm.setOpenModification( new OpenModification(deltaMass, new HashSet<>()));
+		}
+
+		if(searchProgram.equals(Constants.PROGRAM_NAME_COMET)) {
+			// handle comet scores
+
+			final BigDecimal xcorr = new BigDecimal(fields[columnMap.get("XCorr")]);
+			final BigDecimal deltaCn = new BigDecimal(fields[columnMap.get("DeltaCN")]);
+			final int spRank = Integer.parseInt(fields[columnMap.get("SPRank")]);
+			final BigDecimal expectScore = new BigDecimal(fields[columnMap.get("Expectation")]);
+
+			((CometPSM) psm).setXCorr(xcorr);
+			((CometPSM) psm).setDeltaCN(deltaCn);
+			((CometPSM) psm).setSpRank(spRank);
+			((CometPSM) psm).setExpectationValue(expectScore);
+		} else {
+			// handle msfragger scores
+
+			final BigDecimal expectScore = new BigDecimal(fields[columnMap.get("Expectation")]);
+			final BigDecimal hyperScore = new BigDecimal(fields[columnMap.get("Hyperscore")]);
+			final BigDecimal nextScore = new BigDecimal(fields[columnMap.get("Nextscore")]);
+
+			((MSFraggerPSM) psm).setExpectationValue(expectScore);
+			((MSFraggerPSM) psm).setHyperscore(hyperScore);
+			((MSFraggerPSM) psm).setNextscore(nextScore);
+		}
+
+
+		// handle var mods
 		psm.setModifications(getDynamicModsFromString(modString, sequence, params));
 
-		// add in open mod and localizations
-		if(isOpenMod) {
-			psm.setOpenModification(getOpenModificationForPsm(massDiff, localizedOpenMod));
-		}
+		// handle proteins
+
 
 		// set whether or not this is a decoy hit
-		psm.setDecoy(isDecoyHit(decoyPrefix, proteinMatch, altProteinMatches));
+		psm.setDecoy(isDecoyHit(decoyPrefix, protein, mappedProteins));
 
 		return psm;
 	}
@@ -169,7 +183,7 @@ public class ResultsParser {
 		if(!proteinName.startsWith(decoyPrefix)) { return false; }
 
 		if(altProteinNames != null && altProteinNames.length() > 0) {
-			String[] altProteins = altProteinNames.split("@@");	// MSFragger separates alt protein entries with "@@"
+			String[] altProteins = altProteinNames.split(", ");
 			for (String altProtein : altProteins) {
 				if (!altProtein.startsWith(decoyPrefix)) {
 					return false;
@@ -178,29 +192,6 @@ public class ResultsParser {
 		}
 
 		return true;
-	}
-
-	/**
-	 * Get an OpenModification and its localizations. Localization is based on the localized peptide
-	 * sequence string generated by MSFragger, where any lowercase residues are predicted localizations.
-	 * First residue is position 1.
-	 *
-	 * @param massdiff Mass diff of PSM
-	 * @param localizedOpenMod Localization peptide sequence in the form of peptIDE
-	 * @return
-	 */
-	private static OpenModification getOpenModificationForPsm(BigDecimal massdiff, String localizedOpenMod) {
-
-		Collection<Integer> positions = new HashSet<>();
-
-		for (int i = 0; i < localizedOpenMod.length(); i++) {
-			char c = localizedOpenMod.charAt(i);
-			if(Character.isLowerCase(c)){
-				positions.add(i + 1);
-			}
-		}
-
-		return new OpenModification(massdiff, positions);
 	}
 
 	/**

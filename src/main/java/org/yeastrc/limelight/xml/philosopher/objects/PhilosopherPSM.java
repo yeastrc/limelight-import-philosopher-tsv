@@ -14,6 +14,15 @@ public class PhilosopherPSM {
 	private String peptideSequence;
 	private boolean isDecoy;
 	private Map<Integer, BigDecimal> mods;
+	private BigDecimal peptideProphetProbability;
+
+	public BigDecimal getPeptideProphetProbability() {
+		return peptideProphetProbability;
+	}
+
+	public void setPeptideProphetProbability(BigDecimal peptideProphetProbability) {
+		this.peptideProphetProbability = peptideProphetProbability;
+	}
 
 	public Map<Integer, BigDecimal> getMods() {
 		return mods;

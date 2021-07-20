@@ -40,7 +40,7 @@ public class ConverterRunner {
 		System.err.println( " Done." );
 		
 		System.err.print( "Reading search results (psm.tsv) into memory..." );
-		PhilosopherResults philosopherResults = ResultsParser.getResults( conversionParameters.getMsfraggerTSVFile(), searchParams, conversionParameters.isOpenMod() );
+		PhilosopherResults philosopherResults = ResultsParser.getResults( conversionParameters.getMsfraggerTSVFile(), searchParams, conversionParameters.isOpenMod(), searchProgram );
 		System.err.println( " Done." );
 
 		System.err.print( "Writing out XML..." );
