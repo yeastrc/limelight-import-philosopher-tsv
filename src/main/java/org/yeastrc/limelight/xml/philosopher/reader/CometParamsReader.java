@@ -34,11 +34,11 @@ public class CometParamsReader {
 		return magParams;
 	}
 	
-	public static Map<Character, BigDecimal> getStaticModsFromParamsFile(InputStream paramsInputStream ) throws IOException {
+	public static Map<String, BigDecimal> getStaticModsFromParamsFile(InputStream paramsInputStream ) throws IOException {
 		
-		Map<Character, BigDecimal> staticMods = new HashMap<>();
+		Map<String, BigDecimal> staticMods = new HashMap<>();
 		
-		Pattern p = Pattern.compile( "^add_([A-Z])_.+=\\s+([0-9]+(\\.[0-9]+)?).*$" );
+		Pattern p = Pattern.compile( "^add_(\\w+)_.+=\\s+([0-9]+(\\.[0-9]+)?).*$" );
 		
 	    try (BufferedReader br = new BufferedReader( new InputStreamReader( paramsInputStream ) ) ) {
 	    	
@@ -54,7 +54,7 @@ public class CometParamsReader {
 					double d = Double.valueOf( m.group( 2 ) );
 					
 					if( d >= 0.000001 )
-						staticMods.put( m.group( 1 ).charAt( 0 ), new BigDecimal( m.group( 2 ) ) );
+						staticMods.put( m.group( 1 ), new BigDecimal( m.group( 2 ) ) );
 				}
 			}
 	    	

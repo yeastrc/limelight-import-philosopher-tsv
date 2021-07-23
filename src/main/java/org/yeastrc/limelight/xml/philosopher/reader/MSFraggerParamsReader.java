@@ -79,11 +79,11 @@ public class MSFraggerParamsReader {
 	 * @return
 	 * @throws IOException
 	 */
-	public static Map<Character, BigDecimal> getStaticModsFromParamsFile(InputStream paramsInputStream ) throws IOException {
+	public static Map<String, BigDecimal> getStaticModsFromParamsFile(InputStream paramsInputStream ) throws IOException {
 
-		Map<Character, BigDecimal> staticMods = new HashMap<>();
+		Map<String, BigDecimal> staticMods = new HashMap<>();
 
-		Pattern p = Pattern.compile( "^add_(\\w)_\\w+\\s+=\\s+([0-9]+(\\.[0-9]+)?).*$" );
+		Pattern p = Pattern.compile( "^add_(\\w+)_\\w+\\s+=\\s+([0-9]+(\\.[0-9]+)?).*$" );
 
 		try (BufferedReader br = new BufferedReader( new InputStreamReader( paramsInputStream ) ) ) {
 
@@ -91,7 +91,7 @@ public class MSFraggerParamsReader {
 
 				Matcher m = p.matcher( line );
 				if( m.matches() ) {
-					char residue = m.group( 1 ).charAt( 0 );
+					String residue = m.group( 1 );
 					double d = Double.valueOf( m.group( 2 ) );
 					if( d >= 0.000001 )
 						staticMods.put( residue, new BigDecimal(m.group( 2 ) ) );

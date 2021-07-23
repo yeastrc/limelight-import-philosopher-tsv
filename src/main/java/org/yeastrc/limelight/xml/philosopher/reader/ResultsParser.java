@@ -21,6 +21,7 @@ package org.yeastrc.limelight.xml.philosopher.reader;
 import com.sun.xml.bind.v2.runtime.reflect.opt.Const;
 import org.yeastrc.limelight.xml.philosopher.constants.Constants;
 import org.yeastrc.limelight.xml.philosopher.objects.*;
+import org.yeastrc.limelight.xml.philosopher.utils.ModParsingUtils;
 import org.yeastrc.limelight.xml.philosopher.utils.PhilosopherParsingUtils;
 import org.yeastrc.limelight.xml.philosopher.utils.ReportedPeptideUtils;
 
@@ -136,7 +137,7 @@ public class ResultsParser {
 
 			final BigDecimal xcorr = new BigDecimal(fields[columnMap.get("XCorr")]);
 			final BigDecimal deltaCn = new BigDecimal(fields[columnMap.get("DeltaCN")]);
-			final int spRank = Integer.parseInt(fields[columnMap.get("SPRank")]);
+			final int spRank = (new BigDecimal(fields[columnMap.get("SPRank")])).setScale(0, RoundingMode.HALF_UP).intValueExact();
 			final BigDecimal expectScore = new BigDecimal(fields[columnMap.get("Expectation")]);
 
 			((CometPSM) psm).setXCorr(xcorr);
@@ -155,12 +156,8 @@ public class ResultsParser {
 			((MSFraggerPSM) psm).setNextscore(nextScore);
 		}
 
-
 		// handle var mods
-		psm.setModifications(getDynamicModsFromString(modString, sequence, params));
-
-		// handle proteins
-
+		psm.setMods(getDynamicModsFromString(assignedModifications, sequence, params));
 
 		// set whether or not this is a decoy hit
 		psm.setDecoy(isDecoyHit(decoyPrefix, protein, mappedProteins));
@@ -195,11 +192,14 @@ public class ResultsParser {
 	}
 
 	/**
-	 * Example of string: "10C(57.02146), 17C(57.02146), 38C(57.02146)"
+	 * Example of string: "11K(155.0946), 8M(15.9949)"
 	 * @param modString
 	 * @return
 	 */
-	private static Map<Integer, BigDecimal> getDynamicModsFromString(String modString, String peptide, MSFraggerParameters params) throws Exception {
+	private static Map<Integer, BigDecimal> getDynamicModsFromString(String modString, String peptide, SearchParameters params) throws Exception {
+
+		System.err.println(modString);
+		System.err.println(peptide);
 
 		Map<Integer, BigDecimal> modMap = new HashMap<>();
 
@@ -216,7 +216,7 @@ public class ResultsParser {
 				String aminoAcid = String.valueOf( peptide.charAt( position - 1 ) );
 				BigDecimal mass = new BigDecimal(m.group(2));
 
-				if(!isModStaticMod(aminoAcid, mass, params))
+				if(!ModParsingUtils.modIsStaticMod(aminoAcid, mass, params))
 					modMap.put(position, mass);
 
 			} else {
@@ -226,13 +226,17 @@ public class ResultsParser {
 				if( m.matches()) {
 
 					int position = 0;
+					String aminoAcid = "N-term";
+
 					if(m.group(1).equals("C")) {
 						position = peptide.length();
+						aminoAcid = "C-term";
 					}
 
 					BigDecimal mass = new BigDecimal(m.group(2));
 
-					modMap.put(position, mass);
+					if(!ModParsingUtils.modIsStaticMod(aminoAcid, mass, params))
+						modMap.put(position, mass);
 
 				} else {
 					throw new Exception("Did not understand reported modification: " + modChunk);

@@ -8,7 +8,7 @@ import java.util.Map;
 
 public class ModParsingUtils {
 
-	public static boolean modIsStaticMod(BigDecimal modMass, String residue, SearchParameters searchParams) {
+	public static boolean modIsStaticMod(String residue, BigDecimal modMass, SearchParameters searchParams) {
 
 		if(residue.equals("N-term")) { residue = "Nterm"; }
 		else if(residue.equals("C-term")) { residue = "Cterm"; }

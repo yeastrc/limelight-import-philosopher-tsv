@@ -16,13 +16,13 @@ public class SearchParameters {
 	/**
 	 * @return the staticMods
 	 */
-	public Map<Character, BigDecimal> getStaticMods() {
+	public Map<String, BigDecimal> getStaticMods() {
 		return staticMods;
 	}
 	/**
 	 * @param staticMods the staticMods to set
 	 */
-	public void setStaticMods(Map<Character, BigDecimal> staticMods) {
+	public void setStaticMods(Map<String, BigDecimal> staticMods) {
 		this.staticMods = staticMods;
 	}
 
@@ -34,7 +34,7 @@ public class SearchParameters {
 		this.decoyPrefix = decoyPrefix;
 	}
 
-	private Map<Character, BigDecimal> staticMods;
+	private Map<String, BigDecimal> staticMods;
 	private String decoyPrefix;
 
 }

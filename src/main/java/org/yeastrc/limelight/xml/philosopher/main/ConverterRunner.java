@@ -38,13 +38,16 @@ public class ConverterRunner {
 		System.err.print( "Reading conf file into memory..." );
 		SearchParameters searchParams = ParamsReader.getSearchParameters(conversionParameters.getParamsFile(), searchProgram );
 		System.err.println( " Done." );
+
+		System.err.println("\tGot static mods: " + searchParams.getStaticMods());
+		System.err.println("\tGot decoy prefix: " + searchParams.getDecoyPrefix());
 		
 		System.err.print( "Reading search results (psm.tsv) into memory..." );
 		PhilosopherResults philosopherResults = ResultsParser.getResults( conversionParameters.getMsfraggerTSVFile(), searchParams, conversionParameters.isOpenMod(), searchProgram );
 		System.err.println( " Done." );
 
 		System.err.print( "Writing out XML..." );
-		(new XMLBuilder()).buildAndSaveXML( conversionParameters, philosopherResults, searchParams );
+		(new XMLBuilder()).buildAndSaveXML( conversionParameters, philosopherResults, searchParams, searchProgram );
 		System.err.println( " Done." );
 
 		System.err.print( "Validating Limelight XML..." );

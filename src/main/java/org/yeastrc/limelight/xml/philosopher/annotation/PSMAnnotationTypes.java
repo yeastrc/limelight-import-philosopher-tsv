@@ -12,7 +12,7 @@ import java.util.List;
 public class PSMAnnotationTypes {
 
 	public static final String PEPTIDEPROPHET_ANNOTATION_TYPE_PROBABILITY = "PeptideProphet Probability";
-	public static final String PHILOSOPHER_ANNOTATION_TYPE_DELTAMASS = "Delta Mass\n";
+	public static final String PHILOSOPHER_ANNOTATION_TYPE_DELTAMASS = "Delta Mass";
 
 	public static final String MSFRAGGER_ANNOTATION_TYPE_EVALUE = "Expectation";
 	public static final String MSFRAGGER_ANNOTATION_TYPE_HYPERSCORE = "Hyperscore";
@@ -25,24 +25,6 @@ public class PSMAnnotationTypes {
 
 	public static List<FilterablePsmAnnotationType> getFilterablePsmAnnotationTypes( String programName ) {
 		List<FilterablePsmAnnotationType> types = new ArrayList<FilterablePsmAnnotationType>();
-
-		{
-			FilterablePsmAnnotationType type = new FilterablePsmAnnotationType();
-			type.setName( PEPTIDEPROPHET_ANNOTATION_TYPE_PROBABILITY );
-			type.setDescription( "Probability from PeptidePRophet" );
-			type.setFilterDirection( FilterDirectionType.BELOW );
-
-			types.add( type );
-		}
-
-		{
-			FilterablePsmAnnotationType type = new FilterablePsmAnnotationType();
-			type.setName( PHILOSOPHER_ANNOTATION_TYPE_DELTAMASS );
-			type.setDescription( "Difference between expected and observed mass for peptide, as calculated by " + programName );
-			type.setFilterDirection( FilterDirectionType.BELOW );
-
-			types.add( type );
-		}
 
 		if( programName.equals( Constants.PROGRAM_NAME_MSFRAGGER ) ) {
 
@@ -69,6 +51,15 @@ public class PSMAnnotationTypes {
 				type.setName( MSFRAGGER_ANNOTATION_TYPE_NEXTSCORE );
 				type.setDescription( "Difference in hyperscore between top and next hit." );
 				type.setFilterDirection( FilterDirectionType.ABOVE );
+
+				types.add( type );
+			}
+
+			{
+				FilterablePsmAnnotationType type = new FilterablePsmAnnotationType();
+				type.setName( PHILOSOPHER_ANNOTATION_TYPE_DELTAMASS );
+				type.setDescription( "Difference between expected and observed mass for peptide, as calculated by " + programName );
+				type.setFilterDirection( FilterDirectionType.BELOW );
 
 				types.add( type );
 			}
@@ -107,6 +98,26 @@ public class PSMAnnotationTypes {
 				type.setName( COMET_ANNOTATION_TYPE_SPRANK );
 				type.setDescription( "Rank of this PSMs Sp score among candidate peptides." );
 				type.setFilterDirection( FilterDirectionType.BELOW );
+
+				types.add( type );
+			}
+
+			{
+				FilterablePsmAnnotationType type = new FilterablePsmAnnotationType();
+				type.setName( PHILOSOPHER_ANNOTATION_TYPE_DELTAMASS );
+				type.setDescription( "Difference between expected and observed mass for peptide, as calculated by " + programName );
+				type.setFilterDirection( FilterDirectionType.BELOW );
+
+				types.add( type );
+			}
+
+		} else if( programName.equals( Constants.PROGRAM_NAME_PEPTIDEPROPHET)) {
+
+			{
+				FilterablePsmAnnotationType type = new FilterablePsmAnnotationType();
+				type.setName( PEPTIDEPROPHET_ANNOTATION_TYPE_PROBABILITY );
+				type.setDescription( "Probability from PeptideProphet" );
+				type.setFilterDirection( FilterDirectionType.ABOVE );
 
 				types.add( type );
 			}

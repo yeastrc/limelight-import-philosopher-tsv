@@ -24,7 +24,8 @@ public class XMLBuilder {
 
 	public void buildAndSaveXML( ConversionParameters conversionParameters,
 			                     PhilosopherResults philosopherResults,
-			                     SearchParameters searchParameters)
+			                     SearchParameters searchParameters,
+								 String searchProgramName)
     throws Exception {
 
 		LimelightInput limelightInputRoot = new LimelightInput();
@@ -43,11 +44,19 @@ public class XMLBuilder {
 		{
 			SearchProgram searchProgram = new SearchProgram();
 			searchPrograms.getSearchProgram().add( searchProgram );
-				
-			searchProgram.setName( Constants.PROGRAM_NAME_MSFRAGGER );
-			searchProgram.setDisplayName( Constants.PROGRAM_NAME_MSFRAGGER );
+
+			searchProgram.setName( Constants.PROGRAM_NAME_PHILOSOPHER);
+			searchProgram.setDisplayName( Constants.PROGRAM_NAME_PHILOSOPHER );
 			searchProgram.setVersion( "Unknown" );
-			
+		}
+
+		{
+			SearchProgram searchProgram = new SearchProgram();
+			searchPrograms.getSearchProgram().add( searchProgram );
+				
+			searchProgram.setName( Constants.PROGRAM_NAME_PEPTIDEPROPHET );
+			searchProgram.setDisplayName( Constants.PROGRAM_NAME_PEPTIDEPROPHET );
+			searchProgram.setVersion( "Unknown" );
 			
 			//
 			// Define the annotation types present in magnum data
@@ -58,12 +67,52 @@ public class XMLBuilder {
 			FilterablePsmAnnotationTypes filterablePsmAnnotationTypes = new FilterablePsmAnnotationTypes();
 			psmAnnotationTypes.setFilterablePsmAnnotationTypes( filterablePsmAnnotationTypes );
 			
+			for( FilterablePsmAnnotationType annoType : PSMAnnotationTypes.getFilterablePsmAnnotationTypes( Constants.PROGRAM_NAME_PEPTIDEPROPHET ) ) {
+				filterablePsmAnnotationTypes.getFilterablePsmAnnotationType().add( annoType );
+			}
+		}
+
+		if(searchProgramName.equals(Constants.PROGRAM_NAME_MSFRAGGER)) {
+			SearchProgram searchProgram = new SearchProgram();
+			searchPrograms.getSearchProgram().add( searchProgram );
+
+			searchProgram.setName( Constants.PROGRAM_NAME_MSFRAGGER );
+			searchProgram.setDisplayName( Constants.PROGRAM_NAME_MSFRAGGER );
+			searchProgram.setVersion( "Unknown" );
+
+			//
+			// Define the annotation types present in magnum data
+			//
+			PsmAnnotationTypes psmAnnotationTypes = new PsmAnnotationTypes();
+			searchProgram.setPsmAnnotationTypes( psmAnnotationTypes );
+
+			FilterablePsmAnnotationTypes filterablePsmAnnotationTypes = new FilterablePsmAnnotationTypes();
+			psmAnnotationTypes.setFilterablePsmAnnotationTypes( filterablePsmAnnotationTypes );
+
 			for( FilterablePsmAnnotationType annoType : PSMAnnotationTypes.getFilterablePsmAnnotationTypes( Constants.PROGRAM_NAME_MSFRAGGER ) ) {
 				filterablePsmAnnotationTypes.getFilterablePsmAnnotationType().add( annoType );
 			}
-			
+		} else if(searchProgramName.equals(Constants.PROGRAM_NAME_COMET)) {
+			SearchProgram searchProgram = new SearchProgram();
+			searchPrograms.getSearchProgram().add( searchProgram );
+
+			searchProgram.setName( Constants.PROGRAM_NAME_COMET );
+			searchProgram.setDisplayName( Constants.PROGRAM_NAME_COMET );
+			searchProgram.setVersion( "Unknown" );
+
+			//
+			// Define the annotation types present in magnum data
+			//
+			PsmAnnotationTypes psmAnnotationTypes = new PsmAnnotationTypes();
+			searchProgram.setPsmAnnotationTypes( psmAnnotationTypes );
+
+			FilterablePsmAnnotationTypes filterablePsmAnnotationTypes = new FilterablePsmAnnotationTypes();
+			psmAnnotationTypes.setFilterablePsmAnnotationTypes( filterablePsmAnnotationTypes );
+
+			for( FilterablePsmAnnotationType annoType : PSMAnnotationTypes.getFilterablePsmAnnotationTypes( Constants.PROGRAM_NAME_COMET ) ) {
+				filterablePsmAnnotationTypes.getFilterablePsmAnnotationType().add( annoType );
+			}
 		}
-		
 		
 		//
 		// Define which annotation types are visible by default
@@ -74,7 +123,7 @@ public class XMLBuilder {
 		VisiblePsmAnnotations xmlVisiblePsmAnnotations = new VisiblePsmAnnotations();
 		xmlDefaultVisibleAnnotations.setVisiblePsmAnnotations( xmlVisiblePsmAnnotations );
 
-		for( SearchAnnotation sa : PSMDefaultVisibleAnnotationTypes.getDefaultVisibleAnnotationTypes() ) {
+		for( SearchAnnotation sa : PSMDefaultVisibleAnnotationTypes.getDefaultVisibleAnnotationTypes(searchProgramName) ) {
 			xmlVisiblePsmAnnotations.getSearchAnnotation().add( sa );
 		}
 		
@@ -87,7 +136,7 @@ public class XMLBuilder {
 		PsmAnnotationSortOrder xmlPsmAnnotationSortOrder = new PsmAnnotationSortOrder();
 		xmlAnnotationSortOrder.setPsmAnnotationSortOrder( xmlPsmAnnotationSortOrder );
 		
-		for( SearchAnnotation xmlSearchAnnotation : PSMAnnotationTypeSortOrder.getPSMAnnotationTypeSortOrder() ) {
+		for( SearchAnnotation xmlSearchAnnotation : PSMAnnotationTypeSortOrder.getPSMAnnotationTypeSortOrder(searchProgramName) ) {
 			xmlPsmAnnotationSortOrder.getSearchAnnotation().add( xmlSearchAnnotation );
 		}
 		
@@ -99,11 +148,11 @@ public class XMLBuilder {
 			limelightInputRoot.setStaticModifications( smods );
 			
 			
-			for( char residue : searchParameters.getStaticMods().keySet() ) {
+			for( String residue : searchParameters.getStaticMods().keySet() ) {
 				
 				StaticModification xmlSmod = new StaticModification();
 				xmlSmod.setAminoAcid( String.valueOf( residue ) );
-				xmlSmod.setMassChange( BigDecimal.valueOf( searchParameters.getStaticMods().get( residue ) ) );
+				xmlSmod.setMassChange( searchParameters.getStaticMods().get( residue ) );
 				
 				smods.getStaticModification().add( xmlSmod );
 			}
@@ -166,7 +215,7 @@ public class XMLBuilder {
 
 			for( int scanNumber : philosopherResults.getPeptidePSMMap().get(philosopherReportedPeptide).keySet() ) {
 
-				MSFraggerPSM psm = philosopherResults.getPeptidePSMMap().get(philosopherReportedPeptide).get( scanNumber );
+				PhilosopherPSM psm = philosopherResults.getPeptidePSMMap().get(philosopherReportedPeptide).get( scanNumber );
 
 				if(psm.isDecoy()) {
 					continue;
@@ -177,112 +226,111 @@ public class XMLBuilder {
 
 				xmlPsm.setScanNumber( new BigInteger( String.valueOf( scanNumber ) ) );
 				xmlPsm.setPrecursorCharge( new BigInteger( String.valueOf( psm.getCharge() ) ) );
-				xmlPsm.setPrecursorMZ(MassUtils.getObservedMoverZForPsm(psm));
+				xmlPsm.setPrecursorMZ(psm.getPrecursorMZ());
 				xmlPsm.setPrecursorRetentionTime(psm.getRetentionTime());
 
 				// add in the filterable PSM annotations (e.g., score)
 				FilterablePsmAnnotations xmlFilterablePsmAnnotations = new FilterablePsmAnnotations();
 				xmlPsm.setFilterablePsmAnnotations( xmlFilterablePsmAnnotations );
 
+				// handle peptideprophet
 				{
 					FilterablePsmAnnotation xmlFilterablePsmAnnotation = new FilterablePsmAnnotation();
 					xmlFilterablePsmAnnotations.getFilterablePsmAnnotation().add( xmlFilterablePsmAnnotation );
 
-					xmlFilterablePsmAnnotation.setAnnotationName( PSMAnnotationTypes.MSFRAGGER_ANNOTATION_TYPE_FDR );
-					xmlFilterablePsmAnnotation.setSearchProgram( Constants.PROGRAM_NAME_MSFRAGGER );
+					xmlFilterablePsmAnnotation.setAnnotationName( PSMAnnotationTypes.PEPTIDEPROPHET_ANNOTATION_TYPE_PROBABILITY );
+					xmlFilterablePsmAnnotation.setSearchProgram( Constants.PROGRAM_NAME_PEPTIDEPROPHET );
 
-
-					DecimalFormat formatter = new DecimalFormat("0.###E0");
-
-					double fdr = tdAnalysis.getFDRForScore( psm.geteValue() );
-
-					BigDecimal bd = BigDecimal.valueOf( fdr );
-					bd = bd.round( new MathContext( 3 ) );
-
-					xmlFilterablePsmAnnotation.setValue( bd );
+					xmlFilterablePsmAnnotation.setValue( psm.getPeptideProphetProbability() );
 				}
 
-				// handle msfragger scores
-				{
-					FilterablePsmAnnotation xmlFilterablePsmAnnotation = new FilterablePsmAnnotation();
-					xmlFilterablePsmAnnotations.getFilterablePsmAnnotation().add( xmlFilterablePsmAnnotation );
+				if(searchProgramName.equals(Constants.PROGRAM_NAME_MSFRAGGER)) {
+					// handle msfragger scores
 
-					xmlFilterablePsmAnnotation.setAnnotationName( PSMAnnotationTypes.MSFRAGGER_ANNOTATION_TYPE_EVALUE );
-					xmlFilterablePsmAnnotation.setSearchProgram( Constants.PROGRAM_NAME_MSFRAGGER );
-					xmlFilterablePsmAnnotation.setValue( psm.geteValue() );
-				}
+					{
+						FilterablePsmAnnotation xmlFilterablePsmAnnotation = new FilterablePsmAnnotation();
+						xmlFilterablePsmAnnotations.getFilterablePsmAnnotation().add(xmlFilterablePsmAnnotation);
 
-				{
-					FilterablePsmAnnotation xmlFilterablePsmAnnotation = new FilterablePsmAnnotation();
-					xmlFilterablePsmAnnotations.getFilterablePsmAnnotation().add( xmlFilterablePsmAnnotation );
+						xmlFilterablePsmAnnotation.setAnnotationName(PSMAnnotationTypes.MSFRAGGER_ANNOTATION_TYPE_EVALUE);
+						xmlFilterablePsmAnnotation.setSearchProgram(Constants.PROGRAM_NAME_MSFRAGGER);
+						xmlFilterablePsmAnnotation.setValue(((MSFraggerPSM)psm).getExpectationValue());
+					}
 
-					xmlFilterablePsmAnnotation.setAnnotationName( PSMAnnotationTypes.MSFRAGGER_ANNOTATION_TYPE_DELTASCORE );
-					xmlFilterablePsmAnnotation.setSearchProgram( Constants.PROGRAM_NAME_MSFRAGGER );
-					xmlFilterablePsmAnnotation.setValue( psm.getHyperScore().subtract( psm.getNextScore() ) );
-				}
-				{
-					FilterablePsmAnnotation xmlFilterablePsmAnnotation = new FilterablePsmAnnotation();
-					xmlFilterablePsmAnnotations.getFilterablePsmAnnotation().add( xmlFilterablePsmAnnotation );
+					{
+						FilterablePsmAnnotation xmlFilterablePsmAnnotation = new FilterablePsmAnnotation();
+						xmlFilterablePsmAnnotations.getFilterablePsmAnnotation().add(xmlFilterablePsmAnnotation);
 
-					xmlFilterablePsmAnnotation.setAnnotationName( PSMAnnotationTypes.MSFRAGGER_ANNOTATION_TYPE_HYPERSCORE );
-					xmlFilterablePsmAnnotation.setSearchProgram( Constants.PROGRAM_NAME_MSFRAGGER );
-					xmlFilterablePsmAnnotation.setValue( psm.getHyperScore() );
-				}
-				{
-					FilterablePsmAnnotation xmlFilterablePsmAnnotation = new FilterablePsmAnnotation();
-					xmlFilterablePsmAnnotations.getFilterablePsmAnnotation().add( xmlFilterablePsmAnnotation );
+						xmlFilterablePsmAnnotation.setAnnotationName(PSMAnnotationTypes.MSFRAGGER_ANNOTATION_TYPE_HYPERSCORE);
+						xmlFilterablePsmAnnotation.setSearchProgram(Constants.PROGRAM_NAME_MSFRAGGER);
+						xmlFilterablePsmAnnotation.setValue(((MSFraggerPSM)psm).getHyperscore());
+					}
 
-					xmlFilterablePsmAnnotation.setAnnotationName( PSMAnnotationTypes.MSFRAGGER_ANNOTATION_TYPE_MASSDIFF );
-					xmlFilterablePsmAnnotation.setSearchProgram( Constants.PROGRAM_NAME_MSFRAGGER );
-					xmlFilterablePsmAnnotation.setValue( psm.getMassDiff() );
-				}
-				{
-					FilterablePsmAnnotation xmlFilterablePsmAnnotation = new FilterablePsmAnnotation();
-					xmlFilterablePsmAnnotations.getFilterablePsmAnnotation().add( xmlFilterablePsmAnnotation );
+					{
+						FilterablePsmAnnotation xmlFilterablePsmAnnotation = new FilterablePsmAnnotation();
+						xmlFilterablePsmAnnotations.getFilterablePsmAnnotation().add(xmlFilterablePsmAnnotation);
 
-					xmlFilterablePsmAnnotation.setAnnotationName( PSMAnnotationTypes.MSFRAGGER_ANNOTATION_TYPE_RANK );
-					xmlFilterablePsmAnnotation.setSearchProgram( Constants.PROGRAM_NAME_MSFRAGGER );
-					xmlFilterablePsmAnnotation.setValue( BigDecimal.valueOf(psm.getHitRank()).setScale(0, RoundingMode.HALF_UP) );
-				}
-				{
-					FilterablePsmAnnotation xmlFilterablePsmAnnotation = new FilterablePsmAnnotation();
-					xmlFilterablePsmAnnotations.getFilterablePsmAnnotation().add( xmlFilterablePsmAnnotation );
+						xmlFilterablePsmAnnotation.setAnnotationName(PSMAnnotationTypes.MSFRAGGER_ANNOTATION_TYPE_NEXTSCORE);
+						xmlFilterablePsmAnnotation.setSearchProgram(Constants.PROGRAM_NAME_MSFRAGGER);
+						xmlFilterablePsmAnnotation.setValue(((MSFraggerPSM)psm).getNextscore());
+					}
 
-					xmlFilterablePsmAnnotation.setAnnotationName( PSMAnnotationTypes.MSFRAGGER_ANNOTATION_TYPE_MATCHED_IONS );
-					xmlFilterablePsmAnnotation.setSearchProgram( Constants.PROGRAM_NAME_MSFRAGGER );
-					xmlFilterablePsmAnnotation.setValue( BigDecimal.valueOf(psm.getMatchedFragmentIons()).setScale(0, RoundingMode.HALF_UP) );
-				}
-				{
-					FilterablePsmAnnotation xmlFilterablePsmAnnotation = new FilterablePsmAnnotation();
-					xmlFilterablePsmAnnotations.getFilterablePsmAnnotation().add( xmlFilterablePsmAnnotation );
+					{
+						FilterablePsmAnnotation xmlFilterablePsmAnnotation = new FilterablePsmAnnotation();
+						xmlFilterablePsmAnnotations.getFilterablePsmAnnotation().add(xmlFilterablePsmAnnotation);
 
-					xmlFilterablePsmAnnotation.setAnnotationName( PSMAnnotationTypes.MSFRAGGER_ANNOTATION_TYPE_MATCHED_RATIO );
-					xmlFilterablePsmAnnotation.setSearchProgram( Constants.PROGRAM_NAME_MSFRAGGER );
-					xmlFilterablePsmAnnotation.setValue( BigDecimal.valueOf( (double)psm.getMatchedFragmentIons() / (double)psm.getTotalFragmentIons() ).setScale(4, RoundingMode.HALF_UP) );
-				}
-				{
-					FilterablePsmAnnotation xmlFilterablePsmAnnotation = new FilterablePsmAnnotation();
-					xmlFilterablePsmAnnotations.getFilterablePsmAnnotation().add( xmlFilterablePsmAnnotation );
+						xmlFilterablePsmAnnotation.setAnnotationName(PSMAnnotationTypes.PHILOSOPHER_ANNOTATION_TYPE_DELTAMASS);
+						xmlFilterablePsmAnnotation.setSearchProgram(Constants.PROGRAM_NAME_MSFRAGGER);
+						xmlFilterablePsmAnnotation.setValue(psm.getMassDiff());
+					}
 
-					xmlFilterablePsmAnnotation.setAnnotationName( PSMAnnotationTypes.MSFRAGGER_ANNOTATION_TYPE_HYPERSCORE_NO_DELTA );
-					xmlFilterablePsmAnnotation.setSearchProgram( Constants.PROGRAM_NAME_MSFRAGGER );
-					xmlFilterablePsmAnnotation.setValue( psm.getHyperScoreNoDeltaMass() );
-				}
-				{
-					FilterablePsmAnnotation xmlFilterablePsmAnnotation = new FilterablePsmAnnotation();
-					xmlFilterablePsmAnnotations.getFilterablePsmAnnotation().add( xmlFilterablePsmAnnotation );
+				} else if(searchProgramName.equals(Constants.PROGRAM_NAME_COMET)) {
+					// handle comet scores
 
-					xmlFilterablePsmAnnotation.setAnnotationName( PSMAnnotationTypes.MSFRAGGER_ANNOTATION_TYPE_HYPERSCORE_WITH_DELTA );
-					xmlFilterablePsmAnnotation.setSearchProgram( Constants.PROGRAM_NAME_MSFRAGGER );
-					xmlFilterablePsmAnnotation.setValue( psm.getHyperScoreWithDeltaMass() );
-				}
-				{
-					FilterablePsmAnnotation xmlFilterablePsmAnnotation = new FilterablePsmAnnotation();
-					xmlFilterablePsmAnnotations.getFilterablePsmAnnotation().add( xmlFilterablePsmAnnotation );
+					{
+						FilterablePsmAnnotation xmlFilterablePsmAnnotation = new FilterablePsmAnnotation();
+						xmlFilterablePsmAnnotations.getFilterablePsmAnnotation().add(xmlFilterablePsmAnnotation);
 
-					xmlFilterablePsmAnnotation.setAnnotationName( PSMAnnotationTypes.MSFRAGGER_ANNOTATION_TYPE_DELTASCORE_WITH_DELTA );
-					xmlFilterablePsmAnnotation.setSearchProgram( Constants.PROGRAM_NAME_MSFRAGGER );
-					xmlFilterablePsmAnnotation.setValue( psm.getHyperScoreWithDeltaMass().subtract(psm.getNextHyperScoreWithDeltaMass()) );
+						xmlFilterablePsmAnnotation.setAnnotationName(PSMAnnotationTypes.COMET_ANNOTATION_TYPE_EVALUE);
+						xmlFilterablePsmAnnotation.setSearchProgram(Constants.PROGRAM_NAME_COMET);
+						xmlFilterablePsmAnnotation.setValue(((CometPSM)psm).getExpectationValue());
+					}
+
+					{
+						FilterablePsmAnnotation xmlFilterablePsmAnnotation = new FilterablePsmAnnotation();
+						xmlFilterablePsmAnnotations.getFilterablePsmAnnotation().add(xmlFilterablePsmAnnotation);
+
+						xmlFilterablePsmAnnotation.setAnnotationName(PSMAnnotationTypes.COMET_ANNOTATION_TYPE_XCORR);
+						xmlFilterablePsmAnnotation.setSearchProgram(Constants.PROGRAM_NAME_COMET);
+						xmlFilterablePsmAnnotation.setValue(((CometPSM)psm).getXCorr());
+					}
+
+					{
+						FilterablePsmAnnotation xmlFilterablePsmAnnotation = new FilterablePsmAnnotation();
+						xmlFilterablePsmAnnotations.getFilterablePsmAnnotation().add(xmlFilterablePsmAnnotation);
+
+						xmlFilterablePsmAnnotation.setAnnotationName(PSMAnnotationTypes.COMET_ANNOTATION_TYPE_DELTACN);
+						xmlFilterablePsmAnnotation.setSearchProgram(Constants.PROGRAM_NAME_COMET);
+						xmlFilterablePsmAnnotation.setValue(((CometPSM)psm).getDeltaCN());
+					}
+
+					{
+						FilterablePsmAnnotation xmlFilterablePsmAnnotation = new FilterablePsmAnnotation();
+						xmlFilterablePsmAnnotations.getFilterablePsmAnnotation().add(xmlFilterablePsmAnnotation);
+
+						xmlFilterablePsmAnnotation.setAnnotationName(PSMAnnotationTypes.COMET_ANNOTATION_TYPE_SPRANK);
+						xmlFilterablePsmAnnotation.setSearchProgram(Constants.PROGRAM_NAME_COMET);
+						xmlFilterablePsmAnnotation.setValue(BigDecimal.valueOf(((CometPSM)psm).getSpRank()));
+					}
+
+					{
+						FilterablePsmAnnotation xmlFilterablePsmAnnotation = new FilterablePsmAnnotation();
+						xmlFilterablePsmAnnotations.getFilterablePsmAnnotation().add(xmlFilterablePsmAnnotation);
+
+						xmlFilterablePsmAnnotation.setAnnotationName(PSMAnnotationTypes.PHILOSOPHER_ANNOTATION_TYPE_DELTAMASS);
+						xmlFilterablePsmAnnotation.setSearchProgram(Constants.PROGRAM_NAME_COMET);
+						xmlFilterablePsmAnnotation.setValue(psm.getMassDiff());
+					}
+
 				}
 
 				// add in the open mod mass if this is an open mod search
@@ -323,11 +371,10 @@ public class XMLBuilder {
 		ConfigurationFile xmlConfigurationFile = new ConfigurationFile();
 		xmlConfigurationFiles.getConfigurationFile().add( xmlConfigurationFile );
 		
-		xmlConfigurationFile.setSearchProgram( Constants.PROGRAM_NAME_MSFRAGGER );
+		xmlConfigurationFile.setSearchProgram( searchProgramName );
 		xmlConfigurationFile.setFileName( conversionParameters.getParamsFile().getName() );
 		xmlConfigurationFile.setFileContent( Files.readAllBytes( FileSystems.getDefault().getPath( conversionParameters.getParamsFile().getAbsolutePath() ) ) );
-		
-		
+
 		//make the xml file
 		CreateImportFileFromJavaObjectsMain.getInstance().createImportFileFromJavaObjectsMain( conversionParameters.getLimelightXMLOutputFile(), limelightInputRoot);
 		
