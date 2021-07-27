@@ -19,6 +19,7 @@
 package org.yeastrc.limelight.xml.philosopher.main;
 
 import org.yeastrc.limelight.xml.philosopher.builder.XMLBuilder;
+import org.yeastrc.limelight.xml.philosopher.constants.Constants;
 import org.yeastrc.limelight.xml.philosopher.objects.*;
 import org.yeastrc.limelight.xml.philosopher.reader.ParamsReader;
 import org.yeastrc.limelight.xml.philosopher.reader.ResultsParser;
@@ -34,6 +35,12 @@ public class ConverterRunner {
 		System.err.print( "Determining search program..." );
 		final String searchProgram = ParamsReader.getSearchProgram(conversionParameters.getParamsFile());
 		System.err.println( " Got: " + searchProgram );
+
+		if(searchProgram.equals(Constants.PROGRAM_NAME_COMET)) {
+			System.err.println("WARNING: Philosopher does not always correctly report modifications for comet results.");
+			System.err.println("WARNING: This may result in wrong data or errors during conversion.");
+			System.err.println("WARNING: A fix is coming, but in the meantime, use at your own risk!");
+		}
 
 		System.err.print( "Reading conf file into memory..." );
 		SearchParameters searchParams = ParamsReader.getSearchParameters(conversionParameters.getParamsFile(), searchProgram );

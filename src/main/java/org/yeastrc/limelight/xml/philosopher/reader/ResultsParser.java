@@ -198,9 +198,6 @@ public class ResultsParser {
 	 */
 	private static Map<Integer, BigDecimal> getDynamicModsFromString(String modString, String peptide, SearchParameters params) throws Exception {
 
-		System.err.println(modString);
-		System.err.println(peptide);
-
 		Map<Integer, BigDecimal> modMap = new HashMap<>();
 
 		if(modString == null || modString.length() < 1) {
