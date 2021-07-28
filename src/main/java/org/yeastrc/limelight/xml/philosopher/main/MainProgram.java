@@ -36,7 +36,7 @@ import picocli.CommandLine;
 		synopsisHeading = "%n",
 		descriptionHeading = "%n@|bold,underline Description:|@%n%n",
 		optionListHeading = "%n@|bold,underline Options:|@%n",
-		description = "Convert the results of a MSFragger analysis to a Limelight XML file suitable for import into Limelight.\n\n" +
+		description = "Convert the results of a Philosopher analysis (MSFragger or Comet) to a Limelight XML file suitable for import into Limelight.\n\n" +
 				"More info at: " + Constants.CONVERSION_PROGRAM_URI
 )
 

@@ -28,7 +28,7 @@ java -jar philosopherTSV2LimelightXML.jar [-hvV] [--open-mod] -f=<fastaFile>
 
 Description:
 
-Convert the results of a MSFragger analysis to a Limelight XML file suitable
+Convert the results of a Philosopher analysis (MSFragger or Comet) to a Limelight XML file suitable
 for import into Limelight.
 
 More info at: https://github.com/yeastrc/limelight-import-philosopher-tsv
