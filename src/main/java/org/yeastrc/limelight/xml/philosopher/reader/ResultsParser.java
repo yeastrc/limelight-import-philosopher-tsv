@@ -54,6 +54,8 @@ public class ResultsParser {
 			String headerLine = br.readLine();
 			Map<String, Integer> columnMap = processHeaderLine(headerLine);
 
+			System.err.println(columnMap);
+
 			for(String line = br.readLine(); line != null; line = br.readLine()) {
 				PhilosopherPSM psm = getPSMFromLine(line, columnMap, params, isOpenMod, searchProgram);
 				PhilosopherReportedPeptide reportedPeptide = ReportedPeptideUtils.getReportedPeptideForPSM( psm );
@@ -109,7 +111,14 @@ public class ResultsParser {
 		final BigDecimal peptideProphetProbability = new BigDecimal(fields[columnMap.get("PeptideProphet Probability")]);
 		final String assignedModifications = fields[columnMap.get("Assigned Modifications")];
 		final String protein = fields[columnMap.get("Protein")];
-		final String mappedProteins = fields[columnMap.get("Mapped Proteins")];
+
+		String mappedProteins = "";
+		try {
+			mappedProteins = fields[columnMap.get("Mapped Proteins")];
+		} catch( Exception e ) {
+			// not all lines in the psm.tsv file contain this field. do nothing
+
+		}
 
 		PhilosopherPSM psm = null;
 		if(searchProgram.equals(Constants.PROGRAM_NAME_COMET)) {
