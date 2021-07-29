@@ -54,8 +54,6 @@ public class ResultsParser {
 			String headerLine = br.readLine();
 			Map<String, Integer> columnMap = processHeaderLine(headerLine);
 
-			System.err.println(columnMap);
-
 			for(String line = br.readLine(); line != null; line = br.readLine()) {
 				PhilosopherPSM psm = getPSMFromLine(line, columnMap, params, isOpenMod, searchProgram);
 				PhilosopherReportedPeptide reportedPeptide = ReportedPeptideUtils.getReportedPeptideForPSM( psm );
